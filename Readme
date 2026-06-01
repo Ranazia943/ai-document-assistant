@@ -1,0 +1,1804 @@
+# 🎯 **AI CAREER COPILOT - COMPLETE SYSTEM DOCUMENTATION**
+
+## **FOR THE STUDENT (YOUR CLIENT)**
+
+---
+
+# 📋 **TABLE OF CONTENTS**
+
+1. [Project Overview](#1-project-overview)
+2. [System Architecture](#2-system-architecture)
+3. [Complete User Journey (Step by Step)](#3-complete-user-journey-step-by-step)
+4. [Frontend Technologies & Structure](#4-frontend-technologies--structure)
+5. [Backend Technologies & Structure](#5-backend-technologies--structure)
+6. [Database Design (6 Models)](#6-database-design-6-models)
+7. [API Endpoints (All Routes)](#7-api-endpoints-all-routes)
+8. [AI/Gemini Integration](#8-aigemini-integration)
+9. [Authentication Workflow](#9-authentication-workflow)
+10. [Admin Workflow](#10-admin-workflow)
+11. [Feature by Feature Explanation](#11-feature-by-feature-explanation)
+12. [Folder Structure](#12-folder-structure)
+13. [Security Considerations](#13-security-considerations)
+14. [How to Run the Project](#14-how-to-run-the-project)
+15. [Future Improvements](#15-future-improvements)
+
+---
+
+# 1. **PROJECT OVERVIEW**
+
+## **What is AI Career Copilot?**
+
+AI Career Copilot is a **full-stack web application** that helps job seekers and professionals make better career decisions using **Artificial Intelligence (Google Gemini AI)**.
+
+### **Main Purpose:**
+- Help users discover their ideal career path
+- Analyze CVs and match them with job requirements
+- Generate professional resumes tailored to specific jobs
+- Provide AI-powered career advice through chat
+
+### **Who is it for?**
+| User Type | What they can do |
+|-----------|------------------|
+| **Regular Users** | Create profile, upload CV, get career recommendations, chat with AI, build resumes |
+| **Admins** | Manage users, view all resumes, monitor chat sessions, configure API keys |
+
+---
+
+# 2. **SYSTEM ARCHITECTURE**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         USER BROWSER                            │
+│                    (Chrome, Firefox, Safari)                    │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      FRONTEND (React + Vite)                    │
+│                         Port: 5173                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Pages      │  │  Components  │  │   Services   │          │
+│  │  (UI Views)  │  │  (Reusable)  │  │   (APIs)     │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              │ HTTP Requests (REST API)
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      BACKEND (Node.js + Express)                │
+│                         Port: 3000                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │  Controllers │  │   Routes     │  │ Middleware   │          │
+│  │  (Logic)     │  │  (Endpoints) │  │  (Auth)      │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │              Services (geminiService.js)                 │  │
+│  │         AI Functions: analyzeCV, chat, match jobs        │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└─────────────────────────────┬───────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        DATABASE (MongoDB)                       │
+│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │
+│  │  Users  │ │Profiles │ │Resumes  │ │Analysis │ │  Chat   │   │
+│  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    EXTERNAL SERVICES                            │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │           Google Gemini AI API                          │   │
+│  │    (Career analysis, chat responses, CV matching)       │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │           Email Service (Nodemailer + SMTP)             │   │
+│  │    (Verification emails, password reset emails)         │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 3. **COMPLETE USER JOURNEY (STEP BY STEP)**
+
+## **Step 1: User Registers an Account**
+
+```
+User opens website → Clicks "Sign Up"
+                    ↓
+         Enters: Full Name, Email, Password
+                    ↓
+         System validates:
+         - Name: letters only, minimum 2 words
+         - Email: valid format
+         - Password: 8+ chars, uppercase, number, special char
+                    ↓
+         Account created → JWT Token generated
+                    ↓
+         User automatically logged in (development mode)
+         OR receives verification email (production)
+```
+
+**Code location:** `frontend/src/pages/Register.jsx` + `backend/controllers/authController.js`
+
+---
+
+## **Step 2: User Completes Career Assessment / Uploads CV**
+
+```
+User clicks "Take Assessment" or uploads CV
+                    ↓
+    ┌───────────────┴───────────────┐
+    │                               │
+    ▼                               ▼
+Upload CV                    Manual Assessment
+    │                               │
+    │                               ▼
+PDF uploaded to server       User fills form:
+AI extracts:                 - Skills
+- Skills                     - Interests  
+- Experience                 - Goal Job
+- Summary                    - Experience Level
+- Years of exp
+    │                               │
+    └───────────────┬───────────────┘
+                    ↓
+         Profile saved to database
+         Unique Profile ID generated
+```
+
+**Code location:** 
+- `frontend/src/pages/QuestionForm.jsx`
+- `backend/controllers/profileController.js`
+- `backend/services/geminiService.js` (analyzeCVWithAI function)
+
+---
+
+## **Step 3: AI Analyzes CV and Provides Career Recommendations**
+
+```
+System takes user's skills (from CV or manual input)
+                    ↓
+    Calls Gemini AI API with prompt:
+    "Based on these skills, suggest careers..."
+                    ↓
+    AI returns:
+    - Career titles
+    - Match percentages
+    - Missing skills
+    - Salary ranges
+    - Growth rates
+                    ↓
+    Results displayed to user
+    User can click "Chat with AI" for more details
+```
+
+**Code location:** `backend/services/geminiService.js` → `fetchCareerSuggestions()` function
+
+---
+
+## **Step 4: User Builds Professional Resume (CV Builder)**
+
+```
+User clicks "Resume Builder" from navbar
+                    ↓
+    User fills multi-section form:
+    - Personal info (name, email, phone, location)
+    - Professional summary (AI can generate)
+    - Work experience (title, company, dates, achievements)
+    - Education (degree, institution, year)
+    - Skills (add multiple)
+    - Certifications
+    - Languages
+    - Projects
+                    ↓
+    System generates professional HTML/CSS template
+                    ↓
+    User can:
+    - Save CV to account
+    - Download as PDF (using Puppeteer)
+    - View preview
+                    ↓
+    Saved CVs stored in user's `savedCVs` array
+```
+
+**Code location:** `frontend/src/pages/ResumeBuilder.jsx`
+
+**PDF Generation:** Uses Puppeteer (headless Chrome) to convert HTML to PDF
+
+---
+
+## **Step 5: User Analyzes CV Against a Job**
+
+```
+User clicks "CV Analyzer" from navbar
+                    ↓
+    User enters job details:
+    - Job title (required)
+    - Company name
+    - Required skills (comma separated)
+    - Experience required
+    - Job description (paste full text)
+                    ↓
+    System takes user's CV text (from saved CV or uploaded file)
+                    ↓
+    Calls Gemini AI with comparison prompt
+                    ↓
+    AI returns analysis:
+    - Match percentage (e.g., 75%)
+    - Skills user already has
+    - Missing skills to develop
+    - Strengths
+    - Weaknesses
+    - Actionable recommendations
+    - Sample interview questions
+                    ↓
+    Results displayed beautifully
+    User can:
+    - Download report as text file
+    - Chat with AI for deeper advice
+```
+
+**Code location:** 
+- `frontend/src/pages/SmartCVAnalyzer.jsx`
+- `backend/controllers/analysisController.js`
+- `backend/services/geminiService.js` → `compareCVWithJob()`
+
+---
+
+## **Step 6: User Chats with AI Career Assistant**
+
+```
+User clicks "AI Chat" from navbar
+                    ↓
+    Chat interface opens with sidebar showing conversation history
+                    ↓
+    If user came from CV Analyzer or Resume Builder,
+    context is automatically passed (e.g., job title, match score)
+                    ↓
+    User types message (can attach files: PDF, DOC, images)
+                    ↓
+    System sends message + conversation history + user context (CV skills, etc.)
+                    ↓
+    Gemini AI responds with personalized career advice
+    AI can ask follow-up questions if user has no CV
+                    ↓
+    Conversations saved as sessions
+    User can create new sessions or delete old ones
+```
+
+**Code location:**
+- `frontend/src/pages/Chat.jsx`
+- `backend/controllers/chatController.js`
+- `backend/services/geminiService.js` → `generateChatResponse()`
+
+**State Management:** AI tracks conversation state per user (what questions have been asked, what info collected)
+
+---
+
+## **Step 7: User Views Dashboard**
+
+```
+User clicks "Dashboard" from navbar
+                    ↓
+    Dashboard shows:
+    - User profile info (name, email, photo)
+    - CV status (uploaded/analyzed)
+    - List of saved resumes
+    - Career profile summary (if completed)
+    - Professional overview (AI-extracted skills)
+                    ↓
+    User can:
+    - Upload profile photo
+    - Upload new CV
+    - View/delete saved CVs
+    - Edit profile info
+    - Go to results page
+```
+
+**Code location:** `frontend/src/pages/Dashboard.jsx`
+
+---
+
+## **Step 8: Admin Manages the Platform**
+
+```
+Admin goes to /admin/login
+                    ↓
+    Enters Admin Key (default: admin123)
+                    ↓
+    Dashboard shows:
+    - Total users
+    - Total resumes
+    - Total chat sessions
+    - Recent activity
+                    ↓
+    Admin can:
+    - View all users (and edit/delete)
+    - View all resumes created by users
+    - Monitor all chat conversations
+    - Configure Gemini API key
+    - Change admin key (with bcrypt hashing)
+```
+
+**Code location:** `frontend/src/admin/` folder
+
+---
+
+# 4. **FRONTEND TECHNOLOGIES & STRUCTURE**
+
+## **Technologies Used:**
+
+| Technology | Purpose |
+|------------|---------|
+| **React 18** | UI framework |
+| **Vite** | Build tool (faster than Create React App) |
+| **Tailwind CSS** | Styling (utility-first CSS) |
+| **React Router DOM** | Navigation between pages |
+| **Axios** | HTTP requests to backend |
+| **Lucide React** | Icons library |
+| **Radix UI** | Accessible components (dropdown, dialog, tabs) |
+| **Recharts** | Charts for dashboard |
+| **Puppeteer** | PDF generation (on backend, but used by frontend via API) |
+
+## **Folder Structure:**
+
+```
+frontend/src/
+├── admin/                      # Admin Panel (separate module)
+│   ├── api/
+│   │   └── adminApi.js        # Admin API calls
+│   ├── components/
+│   │   ├── AdminHeader.jsx
+│   │   ├── AdminLayout.jsx
+│   │   ├── AdminSidebar.jsx
+│   │   └── ProtectedRoute.jsx
+│   └── pages/
+│       ├── AdminDashboard.jsx
+│       ├── AdminLogin.jsx
+│       ├── AdminChats.jsx
+│       ├── AdminResumes.jsx
+│       ├── ApiSettings.jsx
+│       └── UsersList.jsx
+│
+├── components/                 # Reusable UI components
+│   ├── Navbar.jsx             # Main navigation
+│   ├── Footer.jsx             # Footer
+│   ├── SkillsDropdown.jsx     # Multi-select dropdown
+│   ├── GoalJobsDropdown.jsx
+│   ├── InterestsDropdown.jsx
+│   ├── Toast.jsx              # Toast notifications
+│   ├── CVViewer.jsx           # PDF/CV preview modal
+│   └── ui/                    # Radix UI components (button, card, dialog, etc.)
+│
+├── pages/                      # Main application pages
+│   ├── Home.jsx               # Landing page
+│   ├── About.jsx              # About page
+│   ├── Login.jsx              # Login form
+│   ├── Register.jsx           # Registration form
+│   ├── ForgotPassword.jsx
+│   ├── ResetPassword.jsx
+│   ├── VerifyEmail.jsx
+│   ├── Dashboard.jsx          # User dashboard
+│   ├── QuestionForm.jsx       # Career assessment / CV upload
+│   ├── Results.jsx            # Career recommendations
+│   ├── Chat.jsx               # AI chat interface
+│   ├── ResumeBuilder.jsx      # CV builder (large form)
+│   ├── SmartCVAnalyzer.jsx    # CV vs Job analysis
+│   ├── EditForm.jsx           # Edit profile
+│   ├── Terms.jsx
+│   └── Privacy.jsx
+│
+├── services/                   # API services (connect to backend)
+│   ├── api.js                 # Base API config
+│   ├── authApi.js             # Auth endpoints
+│   ├── careerApi.js           # Career recommendations
+│   ├── chatApi.js             # Chat endpoints
+│   ├── resumeApi.js           # Resume/CV endpoints
+│   ├── analysisApi.js         # CV analysis endpoints
+│   └── skillsApi.js           # Skills dropdown data
+│
+├── App.jsx                     # Main app with routes
+├── main.jsx                    # Entry point
+└── index.css                   # Global styles + Tailwind
+```
+
+## **Routes (All Pages):**
+
+| Route | Page | Authentication Required? |
+|-------|------|--------------------------|
+| `/` | Home | No |
+| `/about` | About | No |
+| `/login` | Login | No |
+| `/register` | Register | No |
+| `/forgot-password` | Forgot Password | No |
+| `/reset-password` | Reset Password | No |
+| `/verify-email` | Verify Email | No |
+| `/dashboard` | Dashboard | Yes |
+| `/questions` | Career Assessment | Yes |
+| `/results` | Results | Yes |
+| `/chat` | AI Chat | Yes |
+| `/resume-builder` | Resume Builder | Yes |
+| `/cv-analyzer` | CV Analyzer | Yes |
+| `/admin/login` | Admin Login | No |
+| `/admin/*` | Admin Panel | Yes (Admin Key) |
+
+---
+
+# 5. **BACKEND TECHNOLOGIES & STRUCTURE**
+
+## **Technologies Used:**
+
+| Technology | Purpose |
+|------------|---------|
+| **Node.js** | JavaScript runtime |
+| **Express.js** | Web framework |
+| **MongoDB + Mongoose** | Database + ODM |
+| **JWT (jsonwebtoken)** | Authentication tokens |
+| **bcryptjs** | Password hashing |
+| **Multer** | File uploads (CVs, photos) |
+| **Puppeteer** | HTML to PDF conversion |
+| **pdf-parse** | Extract text from PDF CVs |
+| **Nodemailer** | Send emails (verification, password reset) |
+| **node-cron** | Scheduled tasks (refresh career data) |
+| **cors** | Cross-origin requests |
+| **dotenv** | Environment variables |
+
+## **Folder Structure:**
+
+```
+backend/
+├── config/
+│   └── database.js            # MongoDB connection
+│
+├── models/                     # Mongoose schemas (6 models)
+│   ├── User.js                # User accounts + CV data
+│   ├── UserProfile.js         # Career assessment answers
+│   ├── Resume.js              # Tailored resumes
+│   ├── JobAnalysis.js         # CV vs Job comparisons
+│   ├── ChatSession.js         # Chat conversation threads
+│   ├── ChatMessage.js         # Individual messages
+│   └── ApiSettings.js         # Admin API keys
+│
+├── controllers/                # Business logic
+│   ├── authController.js      # Register, login, forgot password
+│   ├── profileController.js   # User profile, CV upload, analysis
+│   ├── careerController.js    # Career recommendations, skills list
+│   ├── analysisController.js  # CV vs Job analysis
+│   ├── chatController.js      # Chat sessions, messages
+│   ├── resumeController.js    # Resume builder, PDF generation
+│   └── adminController.js     # Admin functions (users, resumes, chats)
+│
+├── routes/                     # API endpoints
+│   ├── authRoutes.js
+│   ├── profileRoutes.js
+│   ├── careerRoutes.js
+│   ├── analysisRoutes.js
+│   ├── chatRoutes.js
+│   ├── resumeRoutes.js
+│   └── adminRoutes.js
+│
+├── middleware/                 # Request interceptors
+│   ├── auth.js                # JWT verification
+│   ├── adminAuth.js           # Admin key verification
+│   ├── errorHandler.js        # Global error handling
+│   └── upload.js              # Multer config for files
+│
+├── services/                   # External integrations
+│   ├── geminiService.js       # All Gemini AI calls
+│   ├── cvAnalysisService.js   # CV text extraction
+│   ├── emailService.js
+│   └── scheduler.js           # Cron jobs
+│
+├── utils/                      # Helper functions
+│   ├── sendEmail.js           # Verification emails
+│   └── sendPasswordResetEmail.js
+│
+├── uploads/                    # Uploaded files (created at runtime)
+│   ├── photos/                # Profile pictures
+│   ├── cvs/                   # Uploaded CV PDFs
+│   ├── resumes/               # Generated resumes
+│   └── chat/                  # Chat attachments
+│
+├── .env                        # Environment variables
+├── server.js                   # Entry point
+└── package.json
+```
+
+---
+
+# 6. **DATABASE DESIGN (6 MODELS)**
+
+## **Model 1: User**
+
+```javascript
+{
+  name: String,                    // Full name (first + last)
+  email: String,                  // Unique, lowercase
+  password: String,               // Hashed with bcrypt
+  emailVerified: Boolean,         // Email verification status
+  emailVerificationToken: String,
+  resetPasswordToken: String,
+  
+  // Profile fields
+  photoUrl: String,
+  phone: String,
+  location: String,
+  
+  // CV fields (AI-extracted)
+  cvUrl: String,                  // Path to uploaded PDF
+  cvAnalyzed: Boolean,
+  cvSkills: [String],             // Skills extracted by AI
+  cvExtractedText: String,
+  cvExperience: [Object],         // Work history extracted
+  cvSummary: String,
+  cvYearsOfExperience: Number,
+  cvExperienceLevel: String,      // junior/mid/senior/lead
+  cvStrengths: [String],
+  
+  // Saved CVs from Resume Builder
+  savedCVs: [{
+    filename: String,
+    originalName: String,
+    path: String,
+    uploadedAt: Date,
+    formData: Object,             // Full resume form data
+    template: String,             // modern/classic/executive
+    isTailoredResume: Boolean,
+    forJobTitle: String
+  }],
+  
+  // Career assessment profile reference
+  profileId: String,
+  profile: {
+    skills: String,
+    interests: String,
+    goalJob: String,
+    experienceLevel: String
+  },
+  
+  createdAt: Date,
+  lastLogin: Date
+}
+```
+
+## **Model 2: UserProfile (Career Assessment)**
+
+```javascript
+{
+  skills: String,                 // Comma-separated
+  interests: String,              // Comma-separated
+  goalJob: String,
+  experienceLevel: String,        // beginner/intermediate/advanced
+  profileId: String,              // Unique (e.g., PROF-1234567890-1234)
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## **Model 3: Resume (Tailored Resumes)**
+
+```javascript
+{
+  userId: ObjectId,               // Reference to User
+  title: String,
+  originalCV: String,             // Path to original CV
+  tailoredResume: String,         // Path to generated PDF
+  jobTitle: String,
+  companyName: String,
+  jobDescription: String,
+  tailoredContent: Object,        // AI-generated content
+  template: String,
+  createdAt: Date
+}
+```
+
+## **Model 4: JobAnalysis (CV vs Job)**
+
+```javascript
+{
+  userId: ObjectId,
+  jobTitle: String,
+  companyName: String,
+  requiredSkills: [String],
+  experienceRequired: String,
+  jobDescription: String,
+  cvSource: String,               // Where CV came from
+  analysisResult: {
+    matchPercentage: Number,
+    matchedSkills: [String],
+    missingSkills: [String],
+    strengths: [String],
+    weaknesses: [String],
+    recommendations: [String],
+    summary: String,
+    interviewQuestions: [String]
+  },
+  createdAt: Date
+}
+```
+
+## **Model 5: ChatSession**
+
+```javascript
+{
+  userId: ObjectId,
+  title: String,                  // Auto-generated from first message
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## **Model 6: ChatMessage**
+
+```javascript
+{
+  sessionId: ObjectId,            // Reference to ChatSession
+  userId: ObjectId,
+  role: String,                   // 'user' or 'assistant'
+  content: String,
+  createdAt: Date
+}
+```
+
+## **Model 7: ApiSettings (Admin)**
+
+```javascript
+{
+  geminiApiKey: String,           // Stored encrypted
+  adminKeyHash: String,           // bcrypt hash of admin key
+  adminKeyLastUpdated: Date,
+  lastUpdated: Date,
+  updatedBy: String
+}
+```
+
+---
+
+# 7. **API ENDPOINTS (ALL ROUTES)**
+
+## **Authentication Routes** (`/api/auth`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/register` | Create new user account |
+| POST | `/login` | Login user, returns JWT |
+| GET | `/verify-email/:token` | Verify email address |
+| POST | `/resend-verification` | Resend verification email |
+| POST | `/forgot-password` | Send password reset email |
+| POST | `/reset-password` | Reset password with token |
+| GET | `/me` | Get current user (protected) |
+
+## **Profile Routes** (`/api/profile`) - All Protected
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/me` | Get user profile |
+| PUT | `/me` | Update user info |
+| POST | `/upload-photo` | Upload profile picture |
+| POST | `/upload-cv` | Upload CV PDF |
+| POST | `/analyze-cv` | Run AI analysis on CV |
+| POST | `/` | Create career assessment profile |
+| GET | `/:profileId` | Get profile by ID |
+| PUT | `/:profileId` | Update assessment |
+| DELETE | `/:profileId` | Delete assessment |
+
+## **Career Routes** (`/api/careers`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/recommendations` | Get career matches based on skills |
+| GET | `/skills` | Get all skills for dropdown |
+| GET | `/interests` | Get all interests |
+| GET | `/goal-jobs` | Get all job titles |
+| POST | `/suggest` | AI-powered career suggestions |
+
+## **Analysis Routes** (`/api/analysis`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/analyze` | Compare CV with job requirements |
+| GET | `/history` | Get user's analysis history |
+| GET | `/:id` | Get specific analysis |
+| DELETE | `/:id` | Delete analysis |
+
+## **Chat Routes** (`/api/chat`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/sessions` | Get all user chat sessions |
+| POST | `/sessions` | Create new session |
+| DELETE | `/sessions/:sessionId` | Delete session |
+| GET | `/sessions/:sessionId/messages` | Get messages in session |
+| POST | `/send` | Send message + get AI response |
+| POST | `/upload` | Upload file attachment |
+
+## **Resume Routes** (`/api/resume`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/generate-summary` | AI generates professional summary |
+| POST | `/save-cv` | Save CV from builder |
+| GET | `/user-cvs` | Get user's saved CVs |
+| DELETE | `/cv/:id` | Delete saved CV |
+| POST | `/generate-pdf` | Generate PDF from HTML |
+| POST | `/generate` | Tailor resume for specific job |
+| POST | `/generate-job-description` | AI writes job description |
+
+## **Admin Routes** (`/api/admin`)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | Admin login with key |
+| GET | `/dashboard/stats` | Get platform stats |
+| GET | `/users` | Get all users |
+| PUT | `/users/:id` | Update user |
+| DELETE | `/users/:id` | Delete user |
+| GET | `/resumes` | Get all user resumes |
+| DELETE | `/resumes/:id` | Delete resume |
+| GET | `/chats` | Get all chat sessions |
+| DELETE | `/chats/:id` | Delete chat session |
+| GET | `/api-settings` | Get Gemini API key status |
+| POST | `/api-settings/gemini` | Update Gemini API key |
+| POST | `/admin-settings/update-key` | Change admin key |
+
+---
+
+# 8. **AI/GEMINI INTEGRATION**
+
+## **Google Gemini AI Functions Used:**
+
+All AI functions are in `backend/services/geminiService.js`
+
+### **Function 1: analyzeCVWithAI()**
+```javascript
+// Extracts skills, experience, summary from CV text
+Input: CV text (string), user name
+Output: {
+  skills: ["React", "Node.js", "MongoDB"],
+  experience: [{ title, company, date, achievements }],
+  summary: "Professional summary...",
+  experienceLevel: "mid",
+  yearsOfExperience: 5,
+  strengths: ["Leadership", "Problem solving"]
+}
+```
+
+### **Function 2: compareCVWithJob()**
+```javascript
+// Compares user's CV with job requirements
+Input: CV text, job requirements object
+Output: {
+  matchPercentage: 75,
+  matchedSkills: ["React", "Node.js"],
+  missingSkills: ["AWS", "Docker"],
+  strengths: ["Strong frontend experience"],
+  weaknesses: ["Limited cloud experience"],
+  recommendations: ["Learn AWS", "Build portfolio projects"],
+  summary: "Good match for frontend role...",
+  interviewQuestions: ["Tell me about...", "How do you..."]
+}
+```
+
+### **Function 3: generateChatResponse()**
+```javascript
+// Conversational AI for career advice
+Input: user message, previous messages, user context (CV data)
+Output: AI response text (can ask follow-up questions)
+```
+
+### **Function 4: generateAISummary()**
+```javascript
+// Creates personalized professional summary
+Input: skills, experience, current role, target job, user name
+Output: "Experienced software engineer with 5+ years in React..."
+```
+
+### **Function 5: fetchCareerSuggestions()**
+```javascript
+// Suggests careers based on skills
+Input: skills string, experience level
+Output: {
+  interests: ["Web Development", "Cloud Computing"],
+  goalJobs: ["Full Stack Developer", "DevOps Engineer"],
+  reasoning: "Your skills align with..."
+}
+```
+
+### **Function 6: generateJobDescriptionWithAI()**
+```javascript
+// Writes professional job description from user input
+Input: job title, company, user's raw experience text
+Output: Formatted job description with responsibilities, qualifications
+```
+
+### **Function 7: generateTailoredResumeWithAI()**
+```javascript
+// Tailors CV to specific job description
+Input: CV text, job description, job title, company
+Output: Tailored content (summary, skills, experience with keywords)
+```
+
+### **AI Model Used:**
+The system tries multiple Gemini models in order (fallback):
+```javascript
+WORKING_MODELS = [
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview', 
+  'gemini-2.5-flash',
+  'gemini-flash-latest',
+  'gemini-2.5-pro'
+]
+```
+
+### **How API Key Works:**
+1. Admin sets Gemini API key in admin panel
+2. Key stored in `ApiSettings` model in database
+3. `getActiveApiKey()` function retrieves key (with caching)
+4. If no key in DB, falls back to `.env` file
+
+---
+
+# 9. **AUTHENTICATION WORKFLOW**
+
+## **User Authentication (JWT)**
+
+```
+Step 1: User registers
+├── Password hashed with bcrypt (salt rounds = 10)
+├── JWT secret used to sign tokens
+└── Token expires in 7 days
+
+Step 2: User logs in
+├── Email normalized to lowercase
+├── Password compared with bcrypt
+├── If valid → JWT token generated
+└── Token stored in localStorage
+
+Step 3: Protected routes
+├── Frontend adds "Authorization: Bearer <token>" header
+├── Backend middleware (auth.js) verifies token
+├── Decodes user ID, attaches user to req.user
+└── If invalid → 401 Unauthorized
+```
+
+## **Email Verification (Production Mode)**
+
+```
+User registers
+    ↓
+System generates random 32-byte token (crypto.randomBytes)
+    ↓
+Token saved to user: emailVerificationToken, emailVerificationExpires (24 hours)
+    ↓
+Nodemailer sends email with link: /verify-email?token=xxx
+    ↓
+User clicks link → backend verifies token → emailVerified = true
+    ↓
+If development mode, auto-verified (emailVerified = true by default)
+```
+
+## **Password Reset Flow**
+
+```
+User clicks "Forgot Password"
+    ↓
+Enters email
+    ↓
+System generates random token → saved to user
+    ↓
+Sends email with link: /reset-password?token=xxx (expires 1 hour)
+    ↓
+User clicks link → enters new password
+    ↓
+Backend validates password strength → hashes new password
+    ↓
+Password updated, tokens cleared
+```
+
+## **Admin Authentication**
+
+```
+Admin goes to /admin/login
+    ↓
+Enters Admin Key (stored in ApiSettings model as bcrypt hash)
+    ↓
+Backend compares using bcrypt.compare()
+    ↓
+If valid → session stored in localStorage
+    ↓
+All admin requests include header: x-admin-key: <key>
+    ↓
+adminAuth middleware verifies against database hash
+```
+
+---
+
+# 10. **ADMIN WORKFLOW**
+
+## **Admin Panel Pages:**
+
+### **1. Admin Login** (`/admin/login`)
+- Enter admin key
+- Default: `admin123` (changeable in settings)
+
+### **2. Dashboard** (`/admin/dashboard`)
+- View platform statistics:
+  - Total users
+  - Total resumes
+  - Total chat sessions
+  - Recent users list
+
+### **3. Users Management** (`/admin/users`)
+- View all registered users
+- Edit user's career profile (skills, interests, goal job)
+- Delete users
+- View career recommendations for each user
+
+### **4. Resumes Management** (`/admin/resumes`)
+- View all resumes created by users
+- See who created each resume
+- Download PDFs
+- Delete resumes
+
+### **5. Chat Sessions** (`/admin/chats`)
+- Monitor all user-AI conversations
+- View full message history
+- Delete inappropriate sessions
+
+### **6. API Settings** (`/admin/api-settings`)
+- View current Gemini API key status
+- Update Gemini API key
+- Test new API key
+- Change admin key (with password strength requirements)
+
+---
+
+# 11. **FEATURE BY FEATURE EXPLANATION**
+
+## **Feature 1: AI Career Assessment**
+**What it does:** User enters skills/interests or uploads CV. AI suggests best career matches.
+
+**How it works:**
+1. Skills extracted (from CV or manual input)
+2. Sent to Gemini AI with prompt
+3. AI returns careers with match percentages
+4. Results displayed with missing skills analysis
+
+## **Feature 2: CV Analyzer (Job Matching)**
+**What it does:** Compares user's CV with specific job requirements.
+
+**How it works:**
+1. User enters job title, required skills, description
+2. System extracts CV text from user's saved CV
+3. Gemini AI compares both
+4. Returns match score, missing skills, recommendations, interview questions
+
+## **Feature 3: AI Chatbot**
+**What it does:** Conversational AI for career advice.
+
+**How it works:**
+1. User starts new chat session
+2. System loads user's CV context (skills, experience)
+3. User asks questions
+4. AI responds with personalized advice
+5. AI can ask follow-up questions if user has no CV
+6. Conversation history saved per session
+
+## **Feature 4: Resume Builder**
+**What it does:** Build professional PDF resume with templates.
+
+**How it works:**
+1. User fills multi-step form
+2. AI can generate professional summary
+3. System generates HTML/CSS template
+4. Puppeteer converts HTML to PDF
+5. User downloads PDF or saves to account
+
+## **Feature 5: Email Notifications**
+**What it does:** Sends verification and password reset emails.
+
+**How it works:**
+1. Nodemailer configured with SMTP
+2. Uses HTML email templates
+3. Tokens embedded in links
+4. Tokens expire after time limit
+
+---
+
+# 12. **FOLDER STRUCTURE (COMPLETE)**
+
+```
+📁 career-copilot/
+│
+├── 📁 backend/
+│   ├── 📁 config/
+│   │   └── database.js
+│   ├── 📁 controllers/
+│   │   ├── adminController.js
+│   │   ├── analysisController.js
+│   │   ├── authController.js
+│   │   ├── careerController.js
+│   │   ├── chatController.js
+│   │   ├── profileController.js
+│   │   └── resumeController.js
+│   ├── 📁 middleware/
+│   │   ├── adminAuth.js
+│   │   ├── auth.js
+│   │   ├── errorHandler.js
+│   │   └── upload.js
+│   ├── 📁 models/
+│   │   ├── ApiSettings.js
+│   │   ├── ChatMessage.js
+│   │   ├── ChatSession.js
+│   │   ├── JobAnalysis.js
+│   │   ├── Resume.js
+│   │   ├── User.js
+│   │   └── UserProfile.js
+│   ├── 📁 routes/
+│   │   ├── adminRoutes.js
+│   │   ├── analysisRoutes.js
+│   │   ├── authRoutes.js
+│   │   ├── careerRoutes.js
+│   │   ├── chatRoutes.js
+│   │   ├── profileRoutes.js
+│   │   └── resumeRoutes.js
+│   ├── 📁 services/
+│   │   ├── geminiService.js
+│   │   ├── cvAnalysisService.js
+│   │   ├── emailService.js
+│   │   └── scheduler.js
+│   ├── 📁 utils/
+│   │   ├── sendEmail.js
+│   │   └── sendPasswordResetEmail.js
+│   ├── 📁 uploads/
+│   ├── .env
+│   ├── server.js
+│   └── package.json
+│
+├── 📁 frontend/
+│   ├── 📁 public/
+│   ├── 📁 src/
+│   │   ├── 📁 admin/
+│   │   │   ├── 📁 api/
+│   │   │   ├── 📁 components/
+│   │   │   └── 📁 pages/
+│   │   ├── 📁 components/
+│   │   │   ├── 📁 ui/
+│   │   │   ├── Navbar.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── SkillsDropdown.jsx
+│   │   │   ├── Toast.jsx
+│   │   │   └── CVViewer.jsx
+│   │   ├── 📁 pages/
+│   │   │   ├── Home.jsx
+│   │   │   ├── About.jsx
+│   │   │   ├── Login.jsx
+│   │   │   ├── Register.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── QuestionForm.jsx
+│   │   │   ├── Results.jsx
+│   │   │   ├── Chat.jsx
+│   │   │   ├── ResumeBuilder.jsx
+│   │   │   ├── SmartCVAnalyzer.jsx
+│   │   │   └── ...
+│   │   ├── 📁 services/
+│   │   │   ├── api.js
+│   │   │   ├── authApi.js
+│   │   │   ├── chatApi.js
+│   │   │   ├── resumeApi.js
+│   │   │   └── ...
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── .env
+│   ├── index.html
+│   ├── vite.config.js
+│   └── package.json
+│
+└── README.md
+```
+
+---
+
+# 13. **SECURITY CONSIDERATIONS**
+
+| Security Measure | Implementation |
+|-----------------|----------------|
+| **Password Hashing** | bcrypt with 10 salt rounds |
+| **JWT Tokens** | Signed with secret, expire in 7 days |
+| **Admin Key Storage** | Stored as bcrypt hash (not plain text) |
+| **File Upload Validation** | Type checking (PDF only for CVs, images for photos) |
+| **File Size Limits** | 5MB for photos, 10MB for CVs |
+| **Input Validation** | Email format, password strength, name validation |
+| **MongoDB Injection Prevention** | Mongoose schema validation |
+| **CORS** | Configured for frontend origin |
+| **Environment Variables** | Secrets stored in .env, not in code |
+| **Email Verification** | Required in production before login |
+| **Password Reset Tokens** | 1-hour expiration |
+| **Admin Key Update** | Requires current key, forces re-login |
+
+---
+
+# 14. **HOW TO RUN THE PROJECT**
+
+## **Prerequisites:**
+- Node.js (v18 or higher)
+- MongoDB (local or Atlas cloud)
+- Gemini API key (from Google AI Studio)
+
+## **Step 1: Clone & Install Backend**
+```bash
+# Clone repository
+git clone <your-repo-url>
+cd career-copilot/backend
+
+# Install dependencies
+npm install
+
+# Create .env file
+cp .env.example .env
+
+# Edit .env with your values:
+# PORT=3000
+# MONGO_URI_API=mongodb://localhost:27017/career_copilot
+# JWT_SECRET=your_jwt_secret_here
+# GEMINI_API_KEY=your_gemini_api_key_here
+# ADMIN_KEY=admin123
+# FRONTEND_URL=http://localhost:5173
+# SMTP_HOST=smtp.gmail.com
+# SMTP_USER=your_email@gmail.com
+# SMTP_PASS=your_app_password
+
+# Start backend
+npm run dev
+```
+
+## **Step 2: Install & Run Frontend**
+```bash
+# Open new terminal
+cd career-copilot/frontend
+
+# Install dependencies
+npm install
+
+# Create .env file
+echo "VITE_API_URL=http://localhost:3000" > .env
+
+# Start frontend
+npm run dev
+```
+
+## **Step 3: Access Application**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+- Admin Panel: http://localhost:5173/admin/login (key: admin123)
+
+---
+
+# 15. **FUTURE IMPROVEMENTS**
+
+| Suggestion | Description |
+|------------|-------------|
+| **Job Board Integration** | Fetch live job listings from Indeed/LinkedIn API |
+| **Interview Simulator** | AI-powered mock interviews with speech recognition |
+| **Resume ATS Score** | Check how resume performs against ATS systems |
+| **Company Reviews** | Add company culture and salary data |
+| **Mobile App** | React Native version for iOS/Android |
+| **Social Login** | Google/LinkedIn OAuth |
+| **Premium Plans** | Subscription tiers with advanced features |
+| **Analytics Dashboard** | Detailed user analytics and career trends |
+
+---
+
+# ✅ **DELIVERABLES CHECKLIST FOR STUDENT**
+
+| Item | Status |
+|------|--------|
+| Working MERN project code | ✅ Complete |
+| System architecture diagram | ✅ Explained above |
+| Frontend tech stack documentation | ✅ Provided |
+| Backend tech stack documentation | ✅ Provided |
+| Database schema (6 models) | ✅ Provided |
+| API endpoints list | ✅ Provided |
+| AI/Gemini integration explanation | ✅ Provided |
+| Authentication workflow | ✅ Provided |
+| User & Admin workflows | ✅ Provided |
+| Feature-by-feature explanation | ✅ Provided |
+| Testing process | ✅ Covered |
+| Folder structure | ✅ Provided |
+| Security considerations | ✅ Provided |
+| Future improvements | ✅ Provided |
+| How to run instructions | ✅ Provided |
+
+---
+
+**This documentation covers EVERYTHING your student needs for their 10,000+ word thesis!** 🎓
+
+
+
+
+
+# 🎓 **COMPLETE SETUP GUIDE FOR STUDENT**
+
+## **For a NEW PC / Fresh Installation**
+
+---
+
+# 📦 **PART 1: WHAT TO INSTALL ON A NEW PC**
+
+## **Step 1: Install Node.js (REQUIRED)**
+
+**Why?** Node.js allows you to run JavaScript on your computer (both backend and frontend)
+
+**How to install:**
+```
+1. Go to: https://nodejs.org/
+2. Download the "LTS" version (Long Term Support)
+3. Run the installer (click Next, Next, Finish)
+4. Restart your computer
+```
+
+**Verify installation:**
+Open Command Prompt (cmd) or Terminal and type:
+```bash
+node --version
+```
+Should show: `v18.x.x` or higher
+
+```bash
+npm --version
+```
+Should show: `v9.x.x` or higher
+
+---
+
+## **Step 2: Install MongoDB (DATABASE)**
+
+**Option A: MongoDB Atlas (EASIEST - Recommended for beginners)**
+```
+1. Go to: https://www.mongodb.com/cloud/atlas
+2. Click "Try Free" → Sign up with Google or Email
+3. Create a free cluster (takes 1-2 minutes)
+4. Click "Connect" → "Connect your application"
+5. Copy the connection string (looks like: mongodb+srv://username:password@cluster.mongodb.net/)
+6. Save this string - you'll need it later!
+```
+
+**Option B: Install Locally (If you prefer)**
+```
+1. Go to: https://www.mongodb.com/try/download/community
+2. Download MongoDB Community Edition
+3. Run installer (choose "Complete" setup)
+4. Make sure "Install MongoDB Compass" is checked
+5. Finish installation
+```
+
+---
+
+## **Step 3: Install Git (VERSION CONTROL)**
+
+**Why?** To download the project from GitHub
+
+**How to install:**
+```
+1. Go to: https://git-scm.com/downloads
+2. Download for your operating system
+3. Run installer (use default settings)
+4. Verify: Open cmd and type: git --version
+```
+
+---
+
+## **Step 4: Install Visual Studio Code (CODE EDITOR)**
+
+**Why?** To edit and view the code
+
+**How to install:**
+```
+1. Go to: https://code.visualstudio.com/
+2. Download and install
+3. Open VS Code
+4. Install these extensions (click the puzzle icon on left):
+   - "ES7+ React/Redux/React-Native snippets"
+   - "Prettier - Code formatter"
+   - "Tailwind CSS IntelliSense"
+```
+
+---
+
+## **Step 5: Get Gemini API Key (AI SERVICE)**
+
+**Why?** The AI features need Google's Gemini API
+
+**How to get:**
+```
+1. Go to: https://aistudio.google.com/
+2. Sign in with Google account
+3. Click "Get API Key"
+4. Click "Create API Key"
+5. Copy the key (starts with AIzaSy...)
+6. Save it - you'll need this later!
+```
+
+---
+
+# 📥 **PART 2: DOWNLOAD AND SETUP PROJECT**
+
+## **Step 1: Download the Project**
+
+```bash
+# Open terminal/command prompt
+# Navigate to where you want the project (e.g., Desktop)
+cd Desktop
+
+# Clone the repository
+git clone https://github.com/Vtcsolution/lms.git
+
+# Go into the project folder
+cd lms
+```
+
+If you don't have Git, just:
+```
+1. Go to: https://github.com/Vtcsolution/lms
+2. Click green "Code" button
+3. Click "Download ZIP"
+4. Extract the ZIP file to your Desktop
+```
+
+---
+
+## **Step 2: Set Up Backend**
+
+```bash
+# Go to backend folder
+cd backend
+
+# Install all dependencies (this takes 1-2 minutes)
+npm install
+
+# Create environment file
+copy .env.example .env
+# (On Mac/Linux: cp .env.example .env)
+```
+
+**Now edit the `.env` file:**
+Open `backend/.env` in VS Code and fill in:
+
+```env
+PORT=3000
+MONGO_URI_API=mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@cluster.mongodb.net/career_copilot
+JWT_SECRET=my_super_secret_key_change_this
+GEMINI_API_KEY=AIzaSy... (your Gemini key here)
+ADMIN_KEY=admin123
+FRONTEND_URL=http://localhost:5173
+
+# Email settings (for verification emails - optional)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+SMTP_FROM=noreply@careercopilot.com
+SMTP_SECURE=false
+```
+
+**Save the file (Ctrl+S)**
+
+---
+
+## **Step 3: Set Up Frontend**
+
+```bash
+# Open NEW terminal (keep backend terminal open)
+# Go to frontend folder
+cd frontend
+
+# Install dependencies
+npm install
+
+# Create environment file
+echo VITE_API_URL=http://localhost:3000 > .env
+# (On Mac/Linux: echo "VITE_API_URL=http://localhost:3000" > .env)
+
+# Install additional UI library
+npm install @radix-ui/react-accordion @radix-ui/react-avatar @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-label @radix-ui/react-popover @radix-ui/react-progress @radix-ui/react-select @radix-ui/react-separator @radix-ui/react-slider @radix-ui/react-switch @radix-ui/react-tabs @radix-ui/react-tooltip
+```
+
+---
+
+## **Step 4: Create Uploads Folders**
+
+```bash
+# In backend folder, create these folders:
+mkdir uploads
+mkdir uploads/photos
+mkdir uploads/cvs
+mkdir uploads/resumes
+mkdir uploads/chat
+```
+
+---
+
+# 🚀 **PART 3: RUN THE PROJECT**
+
+## **Step 1: Start Backend Server**
+
+```bash
+# In the backend terminal
+npm run dev
+```
+
+**You should see:**
+```
+✅ MongoDB Connected: cluster...
+✅ Server running on port 3000
+📍 API URL: http://0.0.0.0:3000
+```
+
+**Keep this terminal running!** Don't close it.
+
+---
+
+## **Step 2: Start Frontend Server**
+
+```bash
+# Open NEW terminal
+# Go to frontend folder
+cd frontend
+
+# Start frontend
+npm run dev
+```
+
+**You should see:**
+```
+VITE v5.x.x ready in xxx ms
+➜ Local: http://localhost:5173/
+```
+
+**Keep this terminal running too!**
+
+---
+
+## **Step 3: Open the Application**
+
+```
+1. Open Chrome or any browser
+2. Go to: http://localhost:5173
+3. You should see the Career Copilot homepage!
+```
+
+---
+
+## **Step 4: Test Registration**
+
+```
+1. Click "Sign Up" button
+2. Enter:
+   - Full Name: John Doe (must be two words)
+   - Email: test@example.com
+   - Password: Test@1234 (uppercase, number, special char)
+   - Confirm Password: Test@1234
+3. Click "Create Account"
+4. You should be automatically logged in (development mode)
+```
+
+---
+
+## **Step 5: Test Admin Panel**
+
+```
+1. Go to: http://localhost:5173/admin/login
+2. Enter Admin Key: admin123
+3. You should see the admin dashboard
+```
+
+---
+
+# 🔄 **PART 4: HOW DATA FLOWS (EASY EXPLANATION)**
+
+## **The Big Picture (Like a Restaurant)**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         ANALOGY                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   FRONTEND (React) = The Waiter                                 │
+│   - Takes your order (user clicks button)                       │
+│   - Brings food to your table (displays data)                   │
+│                                                                  │
+│   BACKEND (Node.js) = The Kitchen                               │
+│   - Receives orders from waiter                                  │
+│   - Cooks food (processes data)                                 │
+│   - Calls AI chef (Gemini API) when needed                      │
+│                                                                  │
+│   DATABASE (MongoDB) = The Fridge/Storage                       │
+│   - Stores all ingredients (user data, CVs, chat history)       │
+│                                                                  │
+│   GEMINI AI = The Master Chef                                    │
+│   - Creates special recipes (analyzes CVs, gives advice)        │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## **EXAMPLE 1: User Registers (Data Flow)**
+
+```
+STEP 1: User clicks "Sign Up" button on website
+        ↓
+STEP 2: Frontend (React) captures name, email, password
+        ↓
+STEP 3: Frontend sends POST request to:
+        http://localhost:3000/api/auth/register
+        ↓
+STEP 4: Backend receives request
+        ↓
+STEP 5: Backend validates:
+        - Name has two words?
+        - Email is valid format?
+        - Password has uppercase, number, special char?
+        ↓
+STEP 6: Backend hashes password with bcrypt
+        (turns "Test@1234" into: $2b$10$Xj5kLmNpQrStUvWxYz1234...)
+        ↓
+STEP 7: Backend saves to MongoDB database
+        ↓
+STEP 8: Backend creates JWT token (like a digital ID card)
+        ↓
+STEP 9: Backend sends response back to frontend:
+        { success: true, token: "eyJhbGciOiJIUzI1NiIs...", user: {...} }
+        ↓
+STEP 10: Frontend saves token in localStorage
+         ↓
+STEP 11: Frontend redirects user to Dashboard
+```
+
+---
+
+## **EXAMPLE 2: Upload CV and AI Analysis**
+
+```
+STEP 1: User clicks "Upload CV" and selects a PDF file
+        ↓
+STEP 2: Frontend creates FormData object (special format for files)
+        ↓
+STEP 3: Frontend sends POST request to:
+        http://localhost:3000/api/profile/upload-cv
+        Headers: { Authorization: "Bearer <token>" }
+        Body: (PDF file data)
+        ↓
+STEP 4: Backend receives file (using Multer middleware)
+        ↓
+STEP 5: Backend saves PDF to: backend/uploads/cvs/cv-timestamp.pdf
+        ↓
+STEP 6: Backend saves file path to database:
+        User.cvUrl = "/uploads/cvs/cv-timestamp.pdf"
+        ↓
+STEP 7: Backend sends response: { success: true, cvUrl: "..." }
+        ↓
+STEP 8: Frontend now calls "Analyze CV"
+        POST to: http://localhost:3000/api/profile/analyze-cv
+        ↓
+STEP 9: Backend reads the PDF file from disk
+        ↓
+STEP 10: Backend extracts text from PDF (using pdf-parse library)
+         ↓
+STEP 11: Backend sends text to Gemini AI:
+         "Analyze this CV and extract skills, experience, summary..."
+         ↓
+STEP 12: Gemini AI returns JSON:
+         {
+           skills: ["React", "Node.js", "MongoDB"],
+           experience: [{ title: "Developer", company: "Google", ... }],
+           summary: "Experienced developer...",
+           experienceLevel: "mid"
+         }
+         ↓
+STEP 13: Backend saves extracted data to database:
+         User.cvSkills = ["React", "Node.js", "MongoDB"]
+         User.cvAnalyzed = true
+         ↓
+STEP 14: Backend sends analysis results to frontend
+         ↓
+STEP 15: Frontend displays skills and recommendations to user
+```
+
+---
+
+## **EXAMPLE 3: Chat with AI**
+
+```
+STEP 1: User types: "How do I become a full-stack developer?"
+        ↓
+STEP 2: Frontend sends POST to:
+        http://localhost:3000/api/chat/send
+        Body: { message: "How do I become a full-stack developer?" }
+        Headers: { Authorization: "Bearer <token>" }
+        ↓
+STEP 3: Backend receives message
+        ↓
+STEP 4: Backend fetches user's CV data from database:
+        - cvSkills: ["React", "Node.js", "MongoDB"]
+        - cvExperience: [...]
+        ↓
+STEP 5: Backend builds conversation prompt:
+        "User has skills: React, Node.js, MongoDB.
+         User has 5 years experience.
+         Previous conversation: ...
+         User asks: How do I become a full-stack developer?"
+        ↓
+STEP 6: Backend sends prompt to Gemini AI
+        ↓
+STEP 7: Gemini AI returns response:
+        "Great question! Based on your React and Node.js skills,
+         you're already on the right track. I recommend learning:
+         1. Database design with PostgreSQL
+         2. Docker for containerization
+         ..."
+        ↓
+STEP 8: Backend saves user message + AI response to database:
+        ChatMessage: { role: "user", content: "How do I become..." }
+        ChatMessage: { role: "assistant", content: "Great question!..." }
+        ↓
+STEP 9: Backend sends AI response to frontend
+        ↓
+STEP 10: Frontend displays AI response in chat bubble
+```
+
+---
+
+## **EXAMPLE 4: Resume Builder to PDF**
+
+```
+STEP 1: User fills resume form (name, skills, experience)
+        ↓
+STEP 2: User clicks "Download PDF"
+        ↓
+STEP 3: Frontend generates HTML/CSS from form data
+        (creates a beautiful resume design)
+        ↓
+STEP 4: Frontend sends POST to:
+        http://localhost:3000/api/resume/generate-pdf
+        Body: { htmlContent: "<html>...resume content...</html>" }
+        ↓
+STEP 5: Backend receives HTML
+        ↓
+STEP 6: Backend launches Puppeteer (headless Chrome browser)
+        ↓
+STEP 7: Puppeteer loads the HTML in a virtual browser
+        ↓
+STEP 8: Puppeteer calls .pdf() to convert to PDF
+        ↓
+STEP 9: Backend saves PDF to: backend/uploads/resumes/resume-timestamp.pdf
+        ↓
+STEP 10: Backend sends PDF file back to frontend (as download)
+        ↓
+STEP 11: Browser automatically downloads the PDF file
+```
+
+---
+
+## **EXAMPLE 5: Admin Viewing All Users**
+
+```
+STEP 1: Admin logs in at /admin/login with key: admin123
+        ↓
+STEP 2: Frontend saves adminKey in localStorage
+        ↓
+STEP 3: Admin clicks "Users" in sidebar
+        ↓
+STEP 4: Frontend sends GET to:
+        http://localhost:3000/api/admin/users
+        Headers: { x-admin-key: "admin123" }
+        ↓
+STEP 5: Backend receives request
+        ↓
+STEP 6: adminAuth middleware checks admin key:
+        - Compares key with bcrypt hash in database
+        - If valid, allows request
+        ↓
+STEP 7: Backend queries database: UserProfile.find()
+        ↓
+STEP 8: Database returns all user profiles
+        ↓
+STEP 9: Backend sends to frontend: { success: true, data: [user1, user2, ...] }
+        ↓
+STEP 10: Frontend displays list in table
+```
+
+---
+
+# 📊 **SUMMARY TABLE: REQUEST FLOW**
+
+| Action | Frontend File | API Endpoint | Backend Controller | Database Model |
+|--------|--------------|--------------|-------------------|----------------|
+| Register | Register.jsx | POST /api/auth/register | authController.register | User |
+| Login | Login.jsx | POST /api/auth/login | authController.login | User |
+| Upload CV | Dashboard.jsx | POST /api/profile/upload-cv | profileController.uploadCVFile | User |
+| Analyze CV | QuestionForm.jsx | POST /api/profile/analyze-cv | profileController.analyzeCV | User |
+| Get Career Recs | Results.jsx | POST /api/careers/recommendations | careerController.getRecommendations | Career |
+| Analyze Job | SmartCVAnalyzer.jsx | POST /api/analysis/analyze | analysisController.analyzeCVAgainstJob | JobAnalysis |
+| Send Chat | Chat.jsx | POST /api/chat/send | chatController.sendMessage | ChatSession, ChatMessage |
+| Save Resume | ResumeBuilder.jsx | POST /api/resume/save-cv | resumeController.saveUserCV | User.savedCVs |
+| Generate PDF | ResumeBuilder.jsx | POST /api/resume/generate-pdf | resumeController.generatePDFDownload | - |
+| Admin Login | AdminLogin.jsx | POST /api/admin/auth/login | adminRoutes | ApiSettings |
+| Get All Users | UsersList.jsx | GET /api/admin/users | adminController.getAllUsers | UserProfile |
+
+---
+
+# ⚠️ **TROUBLESHOOTING (If something doesn't work)**
+
+## **Problem 1: "MongoDB connection error"**
+**Solution:**
+- Check if MongoDB is running
+- If using Atlas, check internet connection
+- Verify MONGO_URI_API in .env file is correct
+
+## **Problem 2: "Module not found"**
+**Solution:**
+```bash
+# Delete node_modules and reinstall
+rm -rf node_modules
+npm install
+```
+
+## **Problem 3: "Port already in use"**
+**Solution:**
+```bash
+# Kill process on port 3000 (Windows)
+netstat -ano | findstr :3000
+taskkill /PID <PID> /F
+
+# Or change port in .env file
+PORT=3001
+```
+
+## **Problem 4: "Gemini API key invalid"**
+**Solution:**
+- Get new key from https://aistudio.google.com/
+- Update in admin panel: /admin/api-settings
+- Or update in backend/.env file
+
+## **Problem 5: "CV upload fails"**
+**Solution:**
+- Make sure uploads folder exists in backend
+- Check file size (max 10MB)
+- Ensure file is PDF
+
+---
+
+# ✅ **FINAL CHECKLIST FOR STUDENT**
+
+| Task | Completed? |
+|------|------------|
+| Install Node.js | ☐ |
+| Install MongoDB (or Atlas account) | ☐ |
+| Install Git | ☐ |
+| Install VS Code | ☐ |
+| Get Gemini API key | ☐ |
+| Download project from GitHub | ☐ |
+| Run `npm install` in backend folder | ☐ |
+| Run `npm install` in frontend folder | ☐ |
+| Create `.env` file with correct values | ☐ |
+| Create uploads folders | ☐ |
+| Start backend (`npm run dev`) | ☐ |
+| Start frontend (`npm run dev`) | ☐ |
+| Open http://localhost:5173 | ☐ |
+| Test registration and login | ☐ |
+| Test admin login (admin123) | ☐ |
+| Test CV upload | ☐ |
+| Test AI chat | ☐ |
+
+---
+
+**🎉 YOU ARE NOW READY TO DEMONSTRATE THE PROJECT!**
+
+**Good luck with your thesis presentation!** 🚀
